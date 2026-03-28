@@ -144,24 +144,18 @@ class Game {
   // ─── Setup red ────────────────────────────────────────────────────────────
 
   _setupNetworkEvents() {
-    // Estado inicial del juego
+    // Estado inicial del juego.
+    // IMPORTANTE: el renderer aún no existe aquí (se crea en _startGame).
+    // Guardamos el mapa en _pendingMap y lo aplicamos en _startGame().
     this.net.on('gameState', (data) => {
-      this.playerId = data.playerId;
+      this.playerId   = data.playerId;
       this.selfPlayer = data.player;
       this.state.players  = data.players  || [];
       this.state.monsters = data.monsters || [];
       this.state.items    = data.items    || [];
 
-      if (data.map) {
-        if (this.renderer) {
-          this.renderer.mapTiles = data.map.tiles;
-          this.renderer.mapSize  = data.map.size;
-        }
-        if (this.ui) {
-          this.ui.minimapTiles = data.map.tiles;
-          this.ui.mapSize      = data.map.size;
-        }
-      }
+      // Guardar mapa: renderer y UI aún no existen (se crean en _startGame)
+      if (data.map) this._pendingMap = data.map;
 
       this._startGame();
     });
@@ -386,7 +380,12 @@ class Game {
 
     // Init renderer
     this.renderer = new Renderer(gc);
-    this.renderer.mapTiles = null; // se asigna en gameState
+
+    // Aplicar mapa recibido en gameState (el renderer aún no existía entonces)
+    if (this._pendingMap) {
+      this.renderer.mapTiles = this._pendingMap.tiles;
+      this.renderer.mapSize  = this._pendingMap.size;
+    }
 
     // Init touch controls
     this.tc = new TouchControls(uc, tc);
@@ -395,6 +394,10 @@ class Game {
     this.ui = new UI(uc);
     this.ui.init();
     this.ui.player = this.selfPlayer;
+    if (this._pendingMap) {
+      this.ui.minimapTiles = this._pendingMap.tiles;
+      this.ui.mapSize      = this._pendingMap.size;
+    }
     this.ui.showChat();
 
     // Chat callback
@@ -403,12 +406,14 @@ class Game {
     // Init input
     this.input = new InputHandler(this.tc, this.renderer, this);
 
-    // Resize
+    // Resize (establece logicalW/H del renderer)
     this._handleResize();
     window.addEventListener('resize', () => this._handleResize());
 
-    // Asignar mapa si ya fue recibido
-    // (gameState ya lo asignó antes de llamar a _startGame)
+    // Snap inmediato de cámara al jugador (evita primer frame en negro)
+    if (this.selfPlayer && this.renderer) {
+      this.renderer.snapToPlayer(this.selfPlayer);
+    }
 
     // Audio
     this._initAudio();
@@ -435,8 +440,10 @@ class Game {
     if (!this._running) return;
     this._rafId = requestAnimationFrame((t) => this._loop(t));
 
-    const dt = Math.min(0.1, (now - this._lastTime) / 1000);
-    this._lastTime = now || performance.now();
+    // now puede ser undefined en el primer call manual desde _startGame
+    const ts = (typeof now === 'number') ? now : performance.now();
+    const dt = Math.min(0.1, Math.max(0, (ts - this._lastTime) / 1000));
+    this._lastTime = ts;
 
     // Actualizar input (movimiento del joystick)
     if (this.input) this.input.update(dt);
