@@ -1,0 +1,20 @@
+{
+  "appId": "com.mupixel.realm",
+  "appName": "MU Pixel Realm",
+  "webDir": "client",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true,
+    "allowNavigation": ["192.168.*.*", "10.0.*.*", "172.16.*.*", "localhost"]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#000000",
+    "minWebViewVersion": 60
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

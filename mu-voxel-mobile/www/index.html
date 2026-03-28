@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>MU Voxel Mobile</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; touch-action: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #ui {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .top-bar { padding: 10px; color: white; text-shadow: 1px 1px 2px black; font-family: sans-serif; pointer-events: auto;}
+        .bottom-bar { 
+            display: flex; justify-content: space-between; padding: 20px;
+            pointer-events: auto;
+        }
+        .hp-globe {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle at 30% 30%, #ff4444, #880000);
+            border-radius: 50%; border: 3px solid #333;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.5), 0px 5px 15px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;
+        }
+        .mp-globe {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle at 30% 30%, #4444ff, #000088);
+            border-radius: 50%; border: 3px solid #333;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.5), 0px 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        /* Joystick Zone */
+        #joy-zone {
+            position: absolute; bottom: 10px; left: 10px;
+            width: 150px; height: 150px;
+            pointer-events: auto;
+        }
+        /* Action Button */
+        #action-button {
+            position: absolute; bottom: 30px; right: 30px;
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background: rgba(200, 200, 200, 0.5);
+            border: 2px solid white;
+            color: white; font-weight: bold; font-family: sans-serif;
+            pointer-events: auto; cursor: pointer;
+            user-select: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #action-button:active { background: rgba(255, 255, 255, 0.8); color: black; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div class="top-bar">
+            Loc: Lorencia<br/>
+            LVL: 1
+        </div>
+        <div class="bottom-bar">
+            <div class="hp-globe">HP</div>
+            <div class="mp-globe">MP</div>
+        </div>
+    </div>
+    
+    <div id="joy-zone"></div>
+    <div id="action-button">ATK</div>
+
+    <!-- Import Map (ES Modules) -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <!-- NippleJS for Virtual Joystick -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    
+    <!-- Game Source -->
+    <script type="module" src="./game.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MU Pixel Realm</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', Courier, monospace;
+      color: #fff;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Pantalla de conexión ───────────────────────────────────────────────── */
+    #connect-screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, #0a0020 0%, #000 100%);
+      z-index: 100;
+    }
+    #connect-screen h1 {
+      font-size: 28px; color: #FFD700; text-shadow: 0 0 20px #FFD700;
+      letter-spacing: 4px; margin-bottom: 6px;
+    }
+    #connect-screen .subtitle {
+      font-size: 12px; color: #8888FF; margin-bottom: 30px; letter-spacing: 2px;
+    }
+    .connect-logo {
+      width: 120px; height: 120px; margin-bottom: 20px;
+    }
+    .input-row {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+    }
+    .connect-label {
+      color: #AAA; font-size: 13px; min-width: 70px;
+    }
+    .connect-input {
+      background: #111; border: 1px solid #444; color: #FFF;
+      padding: 8px 12px; font-size: 14px; border-radius: 4px;
+      font-family: 'Courier New', monospace; outline: none;
+    }
+    .connect-input:focus { border-color: #FFD700; }
+    .port-input { width: 70px; }
+    #connect-btn {
+      margin-top: 16px; padding: 12px 40px;
+      background: linear-gradient(to bottom, #8B6914, #5A4209);
+      color: #FFD700; border: 2px solid #FFD700;
+      font-size: 16px; font-family: 'Courier New', monospace;
+      border-radius: 4px; cursor: pointer; letter-spacing: 2px;
+    }
+    #connect-btn:active { transform: scale(0.96); }
+    #connect-error {
+      color: #E74C3C; font-size: 13px; margin-top: 12px;
+      min-height: 20px; text-align: center;
+    }
+    .saved-ip {
+      color: #555; font-size: 12px; margin-top: 8px;
+    }
+    .saved-ip span { color: #7EB; cursor: pointer; text-decoration: underline; }
+    #connect-ping { color: #2ECC71; font-size: 12px; margin-top: 6px; }
+
+    /* ── Pantalla de login / creación de personaje ─────────────────────────── */
+    #login-screen {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, #0a0020 0%, #000 100%);
+      z-index: 90;
+    }
+    #login-screen h2 { color: #FFD700; font-size: 20px; margin-bottom: 20px; }
+    .name-input {
+      background: #111; border: 1px solid #444; color: #FFF;
+      padding: 10px 14px; font-size: 16px; border-radius: 4px;
+      font-family: 'Courier New', monospace; width: 220px; outline: none;
+      text-align: center; margin-bottom: 20px;
+    }
+    .name-input:focus { border-color: #FFD700; }
+    .class-label { color: #AAA; font-size: 13px; margin-bottom: 12px; }
+    .class-buttons { display: flex; gap: 12px; margin-bottom: 20px; }
+    .class-btn {
+      padding: 10px 16px; border: 2px solid #444; background: #111;
+      color: #AAA; font-family: 'Courier New', monospace; font-size: 13px;
+      border-radius: 4px; cursor: pointer; text-align: center; min-width: 70px;
+    }
+    .class-btn.selected { border-color: #FFD700; color: #FFD700; background: #1A1500; }
+    .class-preview {
+      width: 80px; height: 80px; border: 1px solid #333;
+      margin: 0 auto 16px; background: #0A0A14;
+      border-radius: 4px; position: relative;
+    }
+    #preview-canvas { width: 80px; height: 80px; }
+    #enter-btn {
+      padding: 12px 36px; background: linear-gradient(to bottom, #8B6914, #5A4209);
+      color: #FFD700; border: 2px solid #FFD700;
+      font-size: 15px; font-family: 'Courier New', monospace;
+      border-radius: 4px; cursor: pointer; letter-spacing: 2px;
+    }
+    #enter-btn:active { transform: scale(0.96); }
+    #online-count { color: #555; font-size: 12px; margin-top: 12px; }
+
+    /* ── Canvas del juego ──────────────────────────────────────────────────── */
+    #game-canvas {
+      position: absolute; top: 0; left: 0;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: none;
+    }
+    /* Canvas overlay para UI táctil (siempre encima) */
+    #ui-canvas {
+      position: absolute; top: 0; left: 0;
+      pointer-events: none;
+      display: none;
+    }
+    /* Canvas táctil para capturar eventos */
+    #touch-canvas {
+      position: absolute; top: 0; left: 0;
+      display: none;
+      opacity: 0;
+    }
+
+    /* ── Chat ──────────────────────────────────────────────────────────────── */
+    #chat-panel {
+      position: absolute; bottom: 130px; left: 8px;
+      width: 240px; display: none;
+      flex-direction: column; z-index: 50;
+    }
+    #chat-messages {
+      background: rgba(0,0,0,0.6); border: 1px solid #333;
+      padding: 6px; height: 100px; overflow-y: auto;
+      font-size: 11px; border-radius: 4px 4px 0 0;
+    }
+    #chat-messages .msg { margin-bottom: 3px; }
+    #chat-messages .msg .name { color: #FFD700; }
+    #chat-messages .msg .sys  { color: #2ECC71; font-style: italic; }
+    #chat-messages .msg .lvlup{ color: #F39C12; font-weight: bold; }
+    #chat-row {
+      display: flex; gap: 4px;
+    }
+    #chat-input {
+      flex: 1; background: rgba(0,0,0,0.7); border: 1px solid #444;
+      border-top: 0; color: #FFF; padding: 5px 8px;
+      font-size: 12px; font-family: 'Courier New', monospace; outline: none;
+      border-radius: 0 0 0 4px;
+    }
+    #chat-send {
+      background: #333; border: 1px solid #444; border-top: 0; border-left: 0;
+      color: #FFD700; padding: 5px 8px; font-size: 11px; cursor: pointer;
+      border-radius: 0 0 4px 0;
+    }
+
+    /* ── Loading overlay ────────────────────────────────────────────────────── */
+    #loading {
+      position: absolute; inset: 0; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; z-index: 200;
+    }
+    #loading h2 { color: #FFD700; font-size: 18px; margin-bottom: 12px; }
+    #loading p { color: #888; font-size: 13px; }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid #333;
+      border-top-color: #FFD700; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- Loading inicial -->
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>MU PIXEL REALM</h2>
+  <p>Cargando...</p>
+</div>
+
+<!-- Pantalla de conexión -->
+<div id="connect-screen" style="display:none;">
+  <canvas class="connect-logo" id="logo-canvas" width="120" height="120"></canvas>
+  <h1>MU PIXEL REALM</h1>
+  <p class="subtitle">MMORPG · LORENCIA · LAN</p>
+
+  <div class="input-row">
+    <span class="connect-label">Servidor:</span>
+    <input id="server-ip" class="connect-input" type="text"
+           placeholder="192.168.1.X" maxlength="40"
+           inputmode="decimal">
+    <span style="color:#666">:</span>
+    <input id="server-port" class="connect-input port-input" type="number"
+           value="3000" min="1" max="65535">
+  </div>
+
+  <button id="connect-btn">CONECTAR</button>
+  <div id="connect-error"></div>
+  <div class="saved-ip" id="saved-ip-row" style="display:none">
+    Último: <span id="saved-ip-val"></span>
+  </div>
+  <div id="connect-ping"></div>
+</div>
+
+<!-- Pantalla de creación de personaje -->
+<div id="login-screen">
+  <h2>CREAR PERSONAJE</h2>
+  <input id="char-name" class="name-input" type="text"
+         placeholder="Nombre..." maxlength="16">
+  <p class="class-label">Elige tu clase:</p>
+  <div class="class-buttons">
+    <button class="class-btn selected" data-class="DK">DK<br><small>Dark Knight</small></button>
+    <button class="class-btn" data-class="DW">DW<br><small>Dark Wizard</small></button>
+    <button class="class-btn" data-class="ELF">ELF<br><small>Elf</small></button>
+  </div>
+  <div class="class-preview">
+    <canvas id="preview-canvas" width="80" height="80"></canvas>
+  </div>
+  <button id="enter-btn">&#9654; ENTRAR AL MUNDO</button>
+  <div id="online-count">Online: —</div>
+</div>
+
+<!-- Canvas del juego -->
+<canvas id="game-canvas"></canvas>
+<canvas id="ui-canvas"></canvas>
+<canvas id="touch-canvas"></canvas>
+
+<!-- Chat -->
+<div id="chat-panel">
+  <div id="chat-messages"></div>
+  <div id="chat-row">
+    <input id="chat-input" type="text" placeholder="Chat..." maxlength="100">
+    <button id="chat-send">▶</button>
+  </div>
+</div>
+
+<!-- Scripts en orden de dependencia -->
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="assets/sprites.js"></script>
+<script src="NetworkClient.js"></script>
+<script src="TouchControls.js"></script>
+<script src="Renderer.js"></script>
+<script src="UI.js"></script>
+<script src="InputHandler.js"></script>
+<script src="Game.js"></script>
+
+<script>
+  // Iniciar cuando el DOM y los scripts están listos
+  window.addEventListener('load', () => {
+    window.game = new Game();
+    game.init();
+  });
+</script>
+</body>
+</html>
